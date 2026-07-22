@@ -32,18 +32,6 @@ event_driven_orchestrator/
     example/                        # Databricks Asset Bundles (subscribers, emitters, bronze loader)
 ```
 
-### lakesignal/
-
-The core library. Install via wheel. See [`lakesignal/README.md`](lakesignal/README.md) for full API docs, package structure, YAML reference (**including `variables` / `targets` and `--target`**), **audit/registry tables**, and monitoring queries.
-
-### lakesignal_job_emitter/
-
-Optional companion package that reads **`system.lakeflow.*`** job/task timeline tables and **INSERT**s **`job`** / **`job_task`** signals into the shared **`signal`** table. Deploy via **`example/job_emitter/`**. See [`lakesignal_job_emitter/README.md`](lakesignal_job_emitter/README.md).
-
-### lakesignal_pipeline_emitter/
-
-Optional companion package that reads tagged pipeline **event log** Delta tables and **INSERT**s **`table` / `<dataset>` / `completed`|`failed`** signals into the same **`signal`** table **`lakesignal`** subscribers consume. Deploy via **`example/pipeline_emitter/`**. See [`lakesignal_pipeline_emitter/README.md`](lakesignal_pipeline_emitter/README.md).
-
 ### example/
 
 Reference Databricks Asset Bundles: subscriber patterns (inline, dispatch), optional **job/pipeline emitter** jobs, and a bronze loader. Bundles are **templates** — copy, edit targets/variables, and deploy with `databricks bundle deploy --var=...`. Includes publisher examples in Python, REST/cURL, TypeScript, and Java, plus a **setup notebook** to bootstrap the LakeSignal schema/volume and run `setup()`.
