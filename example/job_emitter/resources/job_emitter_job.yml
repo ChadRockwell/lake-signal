@@ -1,0 +1,27 @@
+resources:
+  jobs:
+    job_emitter:
+      name: lakesignal_job_emitter
+
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
+            dependencies:
+              - /Volumes/${var.lakesignal_catalog}/${var.lakesignal_schema}/lakesignal/libs/lakesignal_job_emitter-0.1.0-py3-none-any.whl
+
+      tasks:
+        - task_key: emit_job_signals
+          environment_key: serverless
+          python_wheel_task:
+            package_name: lakesignal_job_emitter
+            entry_point: lakesignal-job-emitter
+            named_parameters:
+              lakesignal_catalog: ${var.lakesignal_catalog}
+              lakesignal_schema: ${var.lakesignal_schema}
+              workspace_ids: ${var.workspace_ids}
+
+      schedule:
+        quartz_cron_expression: "0 0/5 * * * ?"
+        timezone_id: "UTC"
+        pause_status: PAUSED

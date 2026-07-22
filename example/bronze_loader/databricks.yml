@@ -1,0 +1,43 @@
+bundle:
+  name: lakesignal_example_bronze_loader
+
+variables:
+  catalog:
+    description: "UC catalog for pipeline output"
+  schema:
+    description: "UC schema for pipeline output (customers_raw, orders_raw, compliance_events)"
+  orchestration_catalog:
+    description: "UC catalog for the LakeSignal store (volume + signal tables)"
+  orchestration_schema:
+    description: "UC schema for the LakeSignal store (volume + signal tables)"
+  event_log_catalog:
+    description: "UC catalog for the DLT pipeline event log table"
+  event_log_schema:
+    description: "UC schema for the DLT pipeline event log table"
+  #notification_destination_id:
+  #  type: string
+  #  description: "Workspace notification destination ID (Slack, Teams, email, etc.)"
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      catalog: charoc_serverless_catalog
+      schema: lakesignal_example
+      orchestration_catalog: charoc_serverless_catalog
+      orchestration_schema: orchestration
+      event_log_catalog: charoc_serverless_catalog
+      event_log_schema: orchestration
+  prod:
+    mode: production
+    variables:
+      catalog: prod_catalog
+      schema: lakesignal_example
+      orchestration_catalog: prod_catalog
+      orchestration_schema: orchestration
+      event_log_catalog: prod_catalog
+      event_log_schema: orchestration

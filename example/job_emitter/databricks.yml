@@ -1,0 +1,27 @@
+bundle:
+  name: lakesignal_job_emitter
+
+variables:
+  lakesignal_catalog:
+    description: UC catalog containing the LakeSignal schema
+  lakesignal_schema:
+    description: UC schema containing the signal table and checkpoint volume
+  workspace_ids:
+    description: Comma-separated workspace IDs to include (empty = all workspaces)
+    default: ""
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      lakesignal_catalog: dev_catalog
+      lakesignal_schema: orchestration
+  prod:
+    mode: production
+    variables:
+      lakesignal_catalog: prod_catalog
+      lakesignal_schema: orchestration

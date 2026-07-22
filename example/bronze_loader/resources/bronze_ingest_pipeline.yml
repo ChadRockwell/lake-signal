@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    bronze_ingest:
+      name: "lakesignal_example_bronze_ingest"
+      catalog: ${var.catalog}
+      serverless: true
+      target: ${var.schema}
+      event_log:
+        catalog: ${var.event_log_catalog}
+        schema: ${var.event_log_schema}
+        name: pipeline_events_lakesignal_example_bronze_ingest
+      libraries:
+        - file:
+            path: ../transformations/bronze_customers.sql
+        - file:
+            path: ../transformations/bronze_orders.sql
+        - file:
+            path: ../transformations/bronze_compliance_events.sql

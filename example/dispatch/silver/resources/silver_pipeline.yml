@@ -1,0 +1,12 @@
+resources:
+  pipelines:
+    silver:
+      name: "lakesignal_example_dispatch_silver"
+      catalog: ${var.catalog}
+      serverless: true
+      target: ${var.schema}
+      libraries:
+        - file:
+            path: ../transformations/silver_customers.sql
+        - file:
+            path: ../transformations/silver_orders.sql

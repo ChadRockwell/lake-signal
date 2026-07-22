@@ -1,0 +1,10 @@
+resources:
+  pipelines:
+    gold:
+      name: "lakesignal_example_inline_gold"
+      catalog: ${var.catalog}
+      serverless: true
+      target: ${var.schema}
+      libraries:
+        - file:
+            path: ../transformations/gold_datamart.sql

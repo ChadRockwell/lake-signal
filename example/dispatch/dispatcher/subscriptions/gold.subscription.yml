@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: subscription
+
+variables:
+  silver_catalog:
+    description: "Unity Catalog catalog where the silver pipeline lives"
+  silver_schema:
+    description: "Unity Catalog schema where the silver pipeline lives"
+  job_name:
+    description: "Name of the downstream gold pipeline job to trigger"
+    default: lakesignal_example_dispatch_gold_pipelines
+
+name: gold
+team: data_products
+owners: [bob@company.com]
+tags:
+  domain: finance
+  tier: gold
+
+# Gold depends on the silver pipeline completing (not bronze directly).
+subscribe_to:
+  - subject: pipeline
+    subject_name: ${var.silver_catalog}.${var.silver_schema}.lakesignal_example_dispatch_silver
+    action: completed
+
+cooldown:
+  period: 1d
+  timezone: "UTC"
+
+# Downstream work when dependencies are met. This example uses trigger.job
+# (pipeline-only job that emits started/completed signals). Alternatives:
+#   trigger.pipeline: lakesignal_example_dispatch_gold
+#   trigger.materialized_view: <catalog>.<schema>.<view>
+trigger:
+  job: ${var.job_name}
+
+targets:
+  dev:
+    default: true
+    variables:
+      silver_catalog: charoc_serverless_catalog
+      silver_schema: lakesignal_example
+      job_name: lakesignal_example_dispatch_gold_pipelines
+  prod:
+    variables:
+      silver_catalog: prod_catalog
+      silver_schema: lakesignal_example
+      job_name: lakesignal_example_dispatch_gold_pipelines

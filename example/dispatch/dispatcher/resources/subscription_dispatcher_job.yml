@@ -1,0 +1,45 @@
+resources:
+  jobs:
+    # ── Central dispatcher ──────────────────────────────────────────────
+    # Evaluates every subscription YAML. When a subscriber is ready,
+    # fires configured trigger targets (job, pipeline, materialized_view).
+    subscription_dispatcher:
+      name: "lakesignal_example_dispatch_subscription_dispatcher"
+
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
+            dependencies:
+              - /Volumes/${var.orchestration_catalog}/${var.orchestration_schema}/lakesignal/libs/lakesignal-0.1.0-py3-none-any.whl
+
+      tasks:
+        - task_key: dispatch_subscriptions
+          for_each_task:
+            inputs: >-
+              ["silver.subscription.yml",
+               "gold.subscription.yml"]
+            concurrency: 20
+            task:
+              task_key: dispatch_single
+              environment_key: serverless
+              python_wheel_task:
+                package_name: lakesignal
+                entry_point: lakesignal-dispatch
+                named_parameters:
+                  catalog: ${var.orchestration_catalog}
+                  schema: ${var.orchestration_schema}
+                  config: ${workspace.root_path}/files/subscriptions/{{input}}
+                  target: ${bundle.target}
+
+      schedule:
+        quartz_cron_expression: "0 0/10 * * * ?"
+        timezone_id: "UTC"
+        pause_status: PAUSED
+
+      #webhook_notifications:
+      #  on_failure:
+      #    - id: ${var.notification_destination_id}
+
+      tags:
+        managed_by: lakesignal

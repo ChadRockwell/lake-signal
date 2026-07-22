@@ -1,0 +1,88 @@
+resources:
+  jobs:
+    gold_job:
+      name: "lakesignal_example_inline_gold_job"
+
+      parameters:
+        - name: force_ready
+          default: "false"
+
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
+            dependencies:
+              - /Volumes/${var.orchestration_catalog}/${var.orchestration_schema}/lakesignal/libs/lakesignal-0.1.0-py3-none-any.whl
+
+      tasks:
+        # 1. Check if upstream dependencies are met
+        - task_key: subscriber_check
+          environment_key: serverless
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-subscribe
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              config: ${workspace.root_path}/files/subscriptions/gold.subscription.yml
+              target: ${bundle.target}
+              force_ready: "{{job.parameters.force_ready}}"
+
+        # 2. Condition gate — only proceed if subscriber reports ready
+        - task_key: check_ready
+          depends_on:
+            - task_key: subscriber_check
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.subscriber_check.values.ready}}"
+            right: "true"
+
+        # 3. Emit pipeline-started
+        - task_key: emit_pipeline_started
+          environment_key: serverless
+          depends_on:
+            - task_key: check_ready
+              outcome: "true"
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-emit
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              subject: pipeline
+              subject_name: ${var.catalog}.${var.schema}.lakesignal_example_inline_gold
+              action: started
+
+        # 4. Run gold DLT pipeline
+        - task_key: gold
+          depends_on:
+            - task_key: emit_pipeline_started
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.gold.id}
+
+        # 5. Emit pipeline-completed
+        - task_key: emit_pipeline_completed
+          environment_key: serverless
+          depends_on:
+            - task_key: gold
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-emit
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              subject: pipeline
+              subject_name: ${var.catalog}.${var.schema}.lakesignal_example_inline_gold
+              action: completed
+
+      schedule:
+        quartz_cron_expression: "0 0/10 * * * ?"
+        timezone_id: "UTC"
+        pause_status: PAUSED
+
+      #webhook_notifications:
+      #  on_failure:
+      #    - id: ${var.notification_destination_id}
+
+      tags:
+        managed_by: lakesignal

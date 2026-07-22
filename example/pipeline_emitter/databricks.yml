@@ -1,0 +1,28 @@
+bundle:
+  name: lakesignal_pipeline_emitter
+
+variables:
+  lakesignal_catalog:
+    description: UC catalog containing the LakeSignal schema
+  lakesignal_schema:
+    description: UC schema containing the signal table and checkpoint volume
+  env:
+    description: Environment name used as UC tag value for table discovery
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      lakesignal_catalog: dev_catalog
+      lakesignal_schema: orchestration
+      env: dev
+  prod:
+    mode: production
+    variables:
+      lakesignal_catalog: prod_catalog
+      lakesignal_schema: orchestration
+      env: prod

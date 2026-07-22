@@ -1,0 +1,56 @@
+resources:
+  jobs:
+    # Pipeline-only job — no schedule, triggered by the dispatcher
+    # when the silver pipeline subscription is satisfied.
+    gold_pipelines:
+      name: "lakesignal_example_dispatch_gold_pipelines"
+
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
+            dependencies:
+              - /Volumes/${var.orchestration_catalog}/${var.orchestration_schema}/lakesignal/libs/lakesignal-0.1.0-py3-none-any.whl
+
+      tasks:
+        # 1. Emit pipeline-started
+        - task_key: emit_pipeline_started
+          environment_key: serverless
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-emit
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              subject: pipeline
+              subject_name: ${var.catalog}.${var.schema}.lakesignal_example_dispatch_gold
+              action: started
+
+        # 2. Run gold DLT pipeline
+        - task_key: gold
+          depends_on:
+            - task_key: emit_pipeline_started
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.gold.id}
+
+        # 3. Emit pipeline-completed
+        - task_key: emit_pipeline_completed
+          environment_key: serverless
+          depends_on:
+            - task_key: gold
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-emit
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              subject: pipeline
+              subject_name: ${var.catalog}.${var.schema}.lakesignal_example_dispatch_gold
+              action: completed
+
+      #webhook_notifications:
+      #  on_failure:
+      #    - id: ${var.notification_destination_id}
+
+      tags:
+        managed_by: lakesignal

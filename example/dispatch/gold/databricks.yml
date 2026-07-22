@@ -1,0 +1,34 @@
+bundle:
+  name: lakesignal_example_dispatch_gold
+
+variables:
+  catalog:
+    description: "UC catalog for gold pipeline output"
+  schema:
+    description: "UC schema for gold pipeline output"
+  orchestration_catalog:
+    description: "UC catalog for the LakeSignal store (volume + signal tables)"
+  orchestration_schema:
+    description: "UC schema for the LakeSignal store (volume + signal tables)"
+  #notification_destination_id:
+  #  description: "Workspace notification destination ID (Slack, Teams, email, etc.)"
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      catalog: charoc_serverless_catalog
+      schema: lakesignal_example
+      orchestration_catalog: charoc_serverless_catalog
+      orchestration_schema: orchestration
+  prod:
+    mode: production
+    variables:
+      catalog: prod_catalog
+      schema: lakesignal_example
+      orchestration_catalog: prod_catalog
+      orchestration_schema: orchestration

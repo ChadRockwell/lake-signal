@@ -1,0 +1,59 @@
+resources:
+  jobs:
+    bronze_loader:
+      name: "lakesignal_example_bronze_loader"
+
+      environments:
+        - environment_key: serverless
+          spec:
+            environment_version: "3"
+            dependencies:
+              - /Volumes/${var.orchestration_catalog}/${var.orchestration_schema}/lakesignal/libs/lakesignal-0.1.0-py3-none-any.whl
+
+      tasks:
+        # 1. Emit pipeline-started (DLT run follows)
+        - task_key: emit_pipeline_started
+          environment_key: serverless
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-emit
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              subject: pipeline
+              subject_name: ${var.catalog}.${var.schema}.lakesignal_example_bronze_ingest
+              action: started
+
+        # 2. Run bronze DLT (customers, orders, compliance_events in one pipeline)
+        - task_key: bronze_ingest
+          depends_on:
+            - task_key: emit_pipeline_started
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.bronze_ingest.id}
+
+        # 3. Emit pipeline-completed (subscribers key off this, not per-table signals)
+        - task_key: emit_pipeline_completed
+          environment_key: serverless
+          depends_on:
+            - task_key: bronze_ingest
+          python_wheel_task:
+            package_name: lakesignal
+            entry_point: lakesignal-emit
+            named_parameters:
+              catalog: ${var.orchestration_catalog}
+              schema: ${var.orchestration_schema}
+              subject: pipeline
+              subject_name: ${var.catalog}.${var.schema}.lakesignal_example_bronze_ingest
+              action: completed
+
+      schedule:
+        quartz_cron_expression: "0 0/30 * * * ?"
+        timezone_id: "UTC"
+        pause_status: PAUSED
+
+      #webhook_notifications:
+      #  on_failure:
+      #    - id: ${var.notification_destination_id}
+
+      tags:
+        managed_by: lakesignal
